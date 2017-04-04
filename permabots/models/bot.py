@@ -111,12 +111,14 @@ class Bot(PermabotsModel):
             callback, callback_args, callback_kwargs = resolver_match
             logger.debug("Calling callback:%s for message %s with %s" % 
                          (callback, message, callback_kwargs))
-            text, keyboard, target_state, context = callback(self, message=message, service=bot_service.identity, 
+            text, keyboard, custom_payload, target_state, context = callback(self, message=message, service=bot_service.identity, 
                                                              state_context=state_context, **callback_kwargs)
+            print("got keyboar and payload")
+            print("payload %s" % custom_payload)
             if target_state:
                 self.update_chat_state(bot_service, message, chat_state, target_state, context)
             keyboard = bot_service.build_keyboard(keyboard)
-            bot_service.send_message(bot_service.get_chat_id(message), text, keyboard, message)
+            bot_service.send_message(bot_service.get_chat_id(message), text, keyboard, custom_payload, message)
             
     def handle_hook(self, hook, data):
         """
@@ -599,7 +601,9 @@ class MessengerBot(IntegrationBot):
     def get_chat_id(self, message):
         return message.sender
         
-    def send_message(self, chat_id, text, keyboard, reply_message=None, user=None):
+    def send_message(self, chat_id, text, keyboard, custom_payload, reply_message=None, user=None):
+        print("send_message")
+        print("custom_payload: %s" % custom_payload)
         texts = text.strip().split('\\n')
         msgs = []
         for txt in texts:             
@@ -620,6 +624,16 @@ class MessengerBot(IntegrationBot):
             attachment = TemplateAttachment(generic_template)
             msgs.append(messages.Message(attachment=attachment))
         
+        if custom_payload:
+            title = 'had title'
+            elements = []
+            #for chunk_buttons, last in self.batch(keyboard[0:30], 3):
+            #    elements.append(Element(title=title, buttons=chunk_buttons))
+            elements.append(Element(title=title, subtitle='subtitle', item_url='https://marcos.stream', 
+                            image_url='https://marcos.stream/static/images/logo_mini.png'))
+            generic_template = GenericTemplate(elements)
+            attachment = TemplateAttachment(generic_template)
+            msgs.append(messages.Message(attachment=attachment))
         for msg in msgs:
             try:
                 logger.debug("Message to send:(%s)" % msg.to_dict())

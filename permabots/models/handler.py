@@ -229,7 +229,9 @@ class Handler(PermabotsModel):
             except:
                 response_context['data'] = {}
         context['response'] = response_context
-        response_text, response_keyboard = self.response.process(**context)
+        response_text, response_keyboard, custom_payload = self.response.process(**context)
+        print("hadler get payload")
+        print("payload: %s" % custom_payload)
         # update ChatState
         if self.target_state and success:
             context.pop('message', None)
@@ -242,4 +244,4 @@ class Handler(PermabotsModel):
             target_state = None
             logger.warning("No target state for handler:%s for message %s" % 
                            (self, message))
-        return response_text, response_keyboard, target_state, context
+        return response_text, response_keyboard, custom_payload, target_state, context

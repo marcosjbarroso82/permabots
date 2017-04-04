@@ -21,6 +21,7 @@ class Response(PermabotsModel):
                                          validators=[validators.validate_template, validators.validate_telegram_keyboard],
                                          help_text=_("Template to generate keyboard response. In jinja2 format. http://jinja.pocoo.org/"))
     
+    custom_payload = models.TextField(null=True, blank=True, verbose_name=_("custom payload"))
     class Meta:
         verbose_name = _('Response')
         verbose_name_plural = _('Responses')
@@ -45,4 +46,13 @@ class Response(PermabotsModel):
         else:
             response_keyboard = None
         logger.debug("Response %s generates keyboard  %s" % (self.keyboard_template, response_keyboard))
-        return response_text, response_keyboard
+        if self.custom_payload:
+            response_custom_payload = env.from_string(self.custom_payload)
+            custom_payload = response_custom_payload.render(**context)
+        else:
+            print(10*"=")
+            print("NO HAY PAYLOAD")
+#            import ipdb; ipdb.set_trace()
+            print(self.custom_payload)
+            custom_payload = None
+        return response_text, response_keyboard, custom_payload
