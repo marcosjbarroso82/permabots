@@ -629,8 +629,12 @@ class MessengerBot(IntegrationBot):
             elements = []
             #for chunk_buttons, last in self.batch(keyboard[0:30], 3):
             #    elements.append(Element(title=title, buttons=chunk_buttons))
-            elements.append(Element(title=title, subtitle='subtitle', item_url='https://marcos.stream', 
-                            image_url='https://marcos.stream/static/images/logo_mini.png'))
+            subtitle = 'subtitle'
+            item_url = 'https://marcos.stream'
+            image_url = 'https://marcos.stream/static/images/logo_mini.png'
+            #import ipdb; ipdb.set_trace()
+            elements.append(Element(title=title, subtitle=subtitle, item_url=item_url, 
+                            image_url=image_url))
             generic_template = GenericTemplate(elements)
             attachment = TemplateAttachment(generic_template)
             msgs.append(messages.Message(attachment=attachment))

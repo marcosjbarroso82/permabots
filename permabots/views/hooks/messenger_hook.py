@@ -174,7 +174,6 @@ class Webhook(Resource):
             'object': 'object',
         }   
 
-
 class MessengerHookView(APIView):
     """
     View for Facebook Messenger webhook
