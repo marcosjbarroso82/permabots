@@ -626,17 +626,8 @@ class MessengerBot(IntegrationBot):
             msgs.append(messages.Message(attachment=attachment))
 
         if custom_payload:
-            title = 'had title'
             elements = []
-            #for chunk_buttons, last in self.batch(keyboard[0:30], 3):
-            #    elements.append(Element(title=title, buttons=chunk_buttons))
-
-            cp = custom_payload
-            cp.replace('\n', '')
-            cp = json.loads(cp)
-
-
-
+            cp = json.loads(custom_payload.replace('\n', ''))
             cp_elements = cp['attachment']['payload']['elements']
 
             for el in cp_elements:
@@ -644,9 +635,16 @@ class MessengerBot(IntegrationBot):
                 subtitle = el.get('subtitle', 'sin subtitle')
                 item_url = el.get('item_url', None)
                 image_url = el.get('image_url', None)
+                buttons = []
+                for btn in el.get('buttons', []):
+                    if btn['type'] == 'web_url':
+                        buttons.append(WebUrlButton(title=btn['title'], url=btn['url']))
+                    elif btn['type'] == 'postback':
+                        # TODO: Creo que puede tener botones anidados
+                        buttons.append(PostbackButton(title=btn['title'], payload=btn['payload']))
 
                 elements.append(Element(title=title, subtitle=subtitle, item_url=item_url,
-                                        image_url=image_url))
+                                        image_url=image_url, buttons=buttons))
 
             generic_template = GenericTemplate(elements)
             attachment = TemplateAttachment(generic_template)
