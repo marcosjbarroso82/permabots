@@ -22,6 +22,7 @@ from kik.configuration import Configuration
 from messengerbot import MessengerClient, messages
 import sys
 from permabots import caching
+from messengerbot.quick_replies import QuickReplies, QuickReplyItem
 from messengerbot.attachments import TemplateAttachment
 from messengerbot.elements import Element, PostbackButton, WebUrlButton
 from messengerbot.templates import GenericTemplate, ListTemplate
@@ -627,34 +628,54 @@ class MessengerBot(IntegrationBot):
 
         if custom_payload:
             elements = []
+            attachment = None
+            cp_text = None
+            quick_reply = None
+            template = None
             cp = json.loads(custom_payload.replace('\n', ''))
-            cp_elements = cp['attachment']['payload']['elements']
 
-            for el in cp_elements:
-                title = el.get('title', 'sin titulo')
-                subtitle = el.get('subtitle', 'sin subtitle')
-                item_url = el.get('item_url', None)
-                image_url = el.get('image_url', None)
-                buttons = []
-                for btn in el.get('buttons', []):
-                    if btn['type'] == 'web_url':
-                        buttons.append(WebUrlButton(title=btn['title'], url=btn['url']))
-                    elif btn['type'] == 'postback':
-                        # TODO: Creo que puede tener botones anidados
-                        buttons.append(PostbackButton(title=btn['title'], payload=btn['payload']))
+            if 'text' in cp.keys():
+                cp_text = cp.get('text')
+            elif 'attachment' in cp.keys():
+                cp_elements = cp['attachment']['payload']['elements']
 
-                elements.append(Element(title=title, subtitle=subtitle, item_url=item_url,
-                                        image_url=image_url, buttons=buttons))
-            if cp['attachment']['payload']['template_type'] == 'list':
-                template = ListTemplate(elements)
-            elif cp['attachment']['payload']['template_type'] == 'generic':
-                template = GenericTemplate(elements)
-            else:
-                template = None
+                for el in cp_elements:
+                    title = el.get('title', 'sin titulo')
+                    subtitle = el.get('subtitle', 'sin subtitle')
+                    item_url = el.get('item_url', None)
+                    image_url = el.get('image_url', None)
+                    buttons = []
+                    for btn in el.get('buttons', []):
+                        if btn['type'] == 'web_url':
+                            buttons.append(WebUrlButton(title=btn['title'], url=btn['url']))
+                        elif btn['type'] == 'postback':
+                            # TODO: Creo que puede tener botones anidados
+                            buttons.append(PostbackButton(title=btn['title'], payload=btn['payload']))
+
+                    elements.append(Element(title=title, subtitle=subtitle, item_url=item_url,
+                                            image_url=image_url, buttons=buttons))
+                if cp['attachment']['payload']['template_type'] == 'list':
+                    template = ListTemplate(elements)
+                elif cp['attachment']['payload']['template_type'] == 'generic':
+                    template = GenericTemplate(elements)
+
+
+            quick_replies_items = []
+            if cp.get('quick_replies'):
+                for qr in cp.get('quick_replies'):
+                    qr_args = {
+                        'image_url': qr.get('image_url'),
+                        'title': qr.get('title'),
+                        'content_type': qr.get('content_type'),
+                        'payload': qr.get('payload')
+                    }
+                    quick_replies_items.append(QuickReplyItem(**qr_args))
+                quick_reply = QuickReplies(quick_replies=quick_replies_items) if quick_replies_items else None
 
             if template:
                 attachment = TemplateAttachment(template)
-                msgs.append(messages.Message(attachment=attachment))
+            msgs.append(messages.Message(text=cp_text, attachment=attachment, quick_replies=quick_reply))
+
         for msg in msgs:
             try:
                 logger.debug("Message to send:(%s)" % msg.to_dict())
