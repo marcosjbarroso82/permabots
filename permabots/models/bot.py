@@ -24,7 +24,7 @@ import sys
 from permabots import caching
 from messengerbot.attachments import TemplateAttachment
 from messengerbot.elements import Element, PostbackButton, WebUrlButton
-from messengerbot.templates import GenericTemplate
+from messengerbot.templates import GenericTemplate, ListTemplate
 import textwrap
 
 logger = logging.getLogger(__name__)
@@ -621,8 +621,8 @@ class MessengerBot(IntegrationBot):
             elements = []
             for chunk_buttons, last in self.batch(keyboard[0:30], 3):
                 elements.append(Element(title=title, buttons=chunk_buttons))
-            generic_template = GenericTemplate(elements)
-            attachment = TemplateAttachment(generic_template)
+            keyboard_template = GenericTemplate(elements)
+            attachment = TemplateAttachment(keyboard_template)
             msgs.append(messages.Message(attachment=attachment))
 
         if custom_payload:
@@ -645,10 +645,16 @@ class MessengerBot(IntegrationBot):
 
                 elements.append(Element(title=title, subtitle=subtitle, item_url=item_url,
                                         image_url=image_url, buttons=buttons))
+            if cp['attachment']['payload']['template_type'] == 'list':
+                template = ListTemplate(elements)
+            elif cp['attachment']['payload']['template_type'] == 'generic':
+                template = GenericTemplate(elements)
+            else:
+                template = None
 
-            generic_template = GenericTemplate(elements)
-            attachment = TemplateAttachment(generic_template)
-            msgs.append(messages.Message(attachment=attachment))
+            if template:
+                attachment = TemplateAttachment(template)
+                msgs.append(messages.Message(attachment=attachment))
         for msg in msgs:
             try:
                 logger.debug("Message to send:(%s)" % msg.to_dict())
